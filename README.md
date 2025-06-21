@@ -1,6 +1,8 @@
 # Monke
 Evaluator and VM for the Monkey language, but in Rust
 
+[LLM wiki](https://deepwiki.com/kogernik/monke_lang)
+
 Originally implemented by Thorsten Ball in Go
 [Writing An Interpreter In Go](https://interpreterbook.com/)
 [Writing A Compiler In Go](https://compilerbook.com/)
