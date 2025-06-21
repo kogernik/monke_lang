@@ -13,7 +13,6 @@ Originally implemented by Thorsten Ball in Go
 ## REPL
 ```bash
 cargo run -- --help
-cargo test
 ```
 
 ## TEST
