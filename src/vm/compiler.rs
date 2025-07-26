@@ -76,7 +76,7 @@ impl<'i> Compiler<'i> {
     }
 
     fn compile_bytes(&self, instrs: &[Instruction]) -> Result<Bytecode, MonkeError> {
-        let mut bytecode = Bytecode(vec![]);
+        let mut bytecode = Bytecode(Vec::with_capacity(instrs.len() * 4));
 
         let mut rest_instrs = &instrs[..];
 
@@ -96,12 +96,12 @@ impl<'i> Compiler<'i> {
                 }
 
                 (op_code, Operands::InstrOffset(instr_offset)) => {
-                    let (instrs_before_target, _) = rest_instrs.split_at(*instr_offset as usize);
+                    let instrs_to_target = &rest_instrs[..*instr_offset as usize];
 
                     let address_offset = {
                         let instr_width = op_code.meta().op_bytes_width;
                         let instrs_before_target_width =
-                            OpCode::compute_bytes_width(instrs_before_target);
+                            OpCode::compute_bytes_width(instrs_to_target);
 
                         instr_width + instrs_before_target_width
                     };
