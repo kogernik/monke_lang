@@ -174,7 +174,7 @@ impl<'i> Compiler<'i> {
                     .borrow_mut()
                     .resolve_or_define_free(name)?;
 
-                self.load_symbol(symbol);
+                self.add_get_symbol_instr(symbol);
             }
 
             Expression::Integer(int) => {
@@ -332,7 +332,7 @@ impl<'i> Compiler<'i> {
                 let fn_free_symbols_len = fn_free_symbols.len();
 
                 for symbol in fn_free_symbols {
-                    self.load_symbol(symbol);
+                    self.add_get_symbol_instr(symbol);
                 }
 
                 let bytecode = self.compile_bytes(&fn_scope.instrs)?;
@@ -393,7 +393,7 @@ impl<'i> Compiler<'i> {
     }
 
     #[inline]
-    fn load_symbol(&mut self, symbol: Rc<Symbol<'i>>) {
+    fn add_get_symbol_instr(&mut self, symbol: Rc<Symbol<'i>>) {
         let op_code = match symbol.scope {
             SymbolScope::Global => OpCode::GetGlobal,
             SymbolScope::Local => OpCode::GetLocal,

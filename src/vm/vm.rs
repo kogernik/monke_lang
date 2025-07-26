@@ -468,6 +468,7 @@ impl<'i> VM<'i> {
             OperandWidth::OneByte => {
                 u8::from_be_bytes(bytes_slice.try_into().expect("can't convert into arr")) as usize
             }
+
             OperandWidth::TwoBytes => {
                 u16::from_be_bytes(bytes_slice.try_into().expect("can't convert into arr")) as usize
             }

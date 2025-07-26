@@ -99,16 +99,19 @@ impl<'i> Lexer<'i> {
             '0'..='9' => self.next_number(&cur_to_process),
 
             '=' => self
-                .next_if_eq(TokenKind::Equal, &cur_to_process)
+                .next_if_ch('=', TokenKind::Equal, &cur_to_process)
+                .unwrap_or((TokenKind::Assign, &cur_to_process[..1])),
+            '=' => self
+                .next_if_ch('=', TokenKind::Equal, &cur_to_process)
                 .unwrap_or((TokenKind::Assign, &cur_to_process[..1])),
             '!' => self
-                .next_if_eq(TokenKind::NotEqual, &cur_to_process)
+                .next_if_ch('=', TokenKind::NotEqual, &cur_to_process)
                 .unwrap_or((TokenKind::Bang, &cur_to_process[..1])),
             '<' => self
-                .next_if_eq(TokenKind::LessEqual, &cur_to_process)
+                .next_if_ch('=', TokenKind::LessEqual, &cur_to_process)
                 .unwrap_or((TokenKind::Less, &cur_to_process[..1])),
             '>' => self
-                .next_if_eq(TokenKind::GreaterEqual, &cur_to_process)
+                .next_if_ch('=', TokenKind::GreaterEqual, &cur_to_process)
                 .unwrap_or((TokenKind::Greater, &cur_to_process[..1])),
 
             '/' => self
@@ -129,6 +132,7 @@ impl<'i> Lexer<'i> {
                 ';' => (TokenKind::Semicolon, &cur_to_process[..1]),
                 ':' => (TokenKind::Colon, &cur_to_process[..1]),
                 '*' => (TokenKind::Asterisk, &cur_to_process[..1]),
+
                 _ => panic!("Got unexpected char:\n {}", &cur_to_process[..10]),
             },
         };
@@ -139,34 +143,28 @@ impl<'i> Lexer<'i> {
         Some(token)
     }
 
-    fn next_if_eq(
+    fn next_if_ch(
         &mut self,
+        check_ch: char,
         kind: TokenKind<'i>,
         cur_to_process: &'i str,
     ) -> Option<(TokenKind<'i>, &'i str)> {
-        self.chars_iter
-            .next()
-            .expect("next_if_eq should not be called on EOF");
+        self.chars_iter.next().expect("should not be called on EOF");
 
-        match self.chars_iter.peek()? {
-            '=' => {
-                assert!(
-                    cur_to_process.len() >= 2,
-                    "chars_iter.peek() returned '=' and match block after 1 ch read, \
-                        but we don't have enough chs in cur_to_process"
-                );
+        if self.chars_iter.peek()? == &check_ch {
+            assert!(cur_to_process.len() >= 2,);
 
-                self.chars_iter.next();
-                Some((kind, &cur_to_process[..2]))
-            }
-            _ => None,
+            self.chars_iter.next();
+            Some((kind, &cur_to_process[..2]))
+        } else {
+            None
         }
     }
 
     fn next_try_comment(&mut self, cur_to_process: &'i str) -> Option<(TokenKind<'i>, &'i str)> {
         self.chars_iter
             .next_if_eq(&'/')
-            .expect("next_try_comment should be called only for comments that start with '/'");
+            .expect("should be called only for comments that start with '/'");
 
         match self.chars_iter.peek() {
             Some('/') => {
@@ -174,10 +172,12 @@ impl<'i> Lexer<'i> {
                     .next_if_eq(&'/')
                     .expect("checked in match arm");
 
-                let comment_len =
-                    std::iter::from_fn(|| self.chars_iter.by_ref().next_if(|ch| *ch != '\n'))
-                        .count()
-                        + 2;
+                let comment_len = self
+                    .chars_iter
+                    .by_ref()
+                    .take_while(|ch| *ch != '\n')
+                    .count()
+                    + 2;
 
                 Some((TokenKind::Comment, &cur_to_process[..comment_len]))
             }
@@ -222,7 +222,7 @@ impl<'i> Lexer<'i> {
             std::iter::from_fn(|| self.chars_iter.by_ref().next_if(|ch| ch.is_ascii_digit()))
                 .count();
 
-        assert!(int_len > 0, "int_len > 0 because of prev assert!");
+        assert!(int_len > 0, "expecting int_len > 0 because of prev assert!");
 
         let frac_len = match (self.chars_iter.next(), self.chars_iter.peek()) {
             (Some('.'), Some('0'..='9')) => {
